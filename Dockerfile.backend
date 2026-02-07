@@ -1,0 +1,26 @@
+# Backend Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copiar package files
+COPY backend/package*.json ./
+
+# Instalar dependencias
+RUN npm ci --only=production
+
+# Copiar código fuente
+COPY backend/ ./
+
+# Crear directorio de uploads
+RUN mkdir -p uploads
+
+# Exponer puerto
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+
+# Iniciar servidor
+CMD ["node", "server.js"]

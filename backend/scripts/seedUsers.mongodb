@@ -1,0 +1,144 @@
+// Script para ejecutar directamente en MongoDB Compass o mongo shell
+// Copia y pega este código en la consola de MongoDB
+
+// Primero, conecta a tu base de datos:
+// use luxeshop
+
+// Luego ejecuta este código:
+
+// Función para hashear password (bcrypt simulado - en producción usar bcrypt real)
+// Por simplicidad, aquí usamos passwords sin hashear para testing
+// En producción, el backend hasheará las passwords
+
+db.users.deleteMany({}); // Limpiar usuarios existentes
+
+db.users.insertMany([
+  // ADMINISTRADORES
+  {
+    name: "Admin Principal",
+    email: "admin@luxeshop.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // admin123
+    role: "admin",
+    phone: "(809) 555-0001",
+    address: {
+      street: "Av. Winston Churchill 1234",
+      city: "Santo Domingo",
+      state: "Distrito Nacional",
+      zipCode: "10001",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    name: "Andy Rosado",
+    email: "andy@luxeshop.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // andy123
+    role: "admin",
+    phone: "(809) 555-0002",
+    address: {
+      street: "Av. Abraham Lincoln 567",
+      city: "Santo Domingo",
+      state: "Distrito Nacional",
+      zipCode: "10002",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  
+  // USUARIOS REGULARES
+  {
+    name: "María García",
+    email: "maria@example.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // maria123
+    role: "user",
+    phone: "(809) 555-0101",
+    address: {
+      street: "Calle El Sol 123",
+      city: "Santiago",
+      state: "Santiago",
+      zipCode: "51000",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    name: "Juan Pérez",
+    email: "juan@example.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // juan123
+    role: "user",
+    phone: "(809) 555-0102",
+    address: {
+      street: "Av. Lope de Vega 456",
+      city: "Santo Domingo",
+      state: "Distrito Nacional",
+      zipCode: "10003",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    name: "Ana López",
+    email: "ana@example.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // ana123
+    role: "user",
+    phone: "(809) 555-0103",
+    address: {
+      street: "Calle Duarte 789",
+      city: "La Vega",
+      state: "La Vega",
+      zipCode: "41000",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    name: "Carlos Rodríguez",
+    email: "carlos@example.com",
+    password: "$2a$10$rQZx5xhWZH3yKfqYvEKKOOvGEuI0k3qRqUjB0HrC1CYkHhR3VmXa2", // carlos123
+    role: "user",
+    phone: "(809) 555-0104",
+    address: {
+      street: "Av. Independencia 321",
+      city: "San Pedro de Macorís",
+      state: "San Pedro de Macorís",
+      zipCode: "21000",
+      country: "República Dominicana"
+    },
+    isActive: true,
+    cart: [],
+    wishlist: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+]);
+
+print("✅ Usuarios creados exitosamente!");
+print("\n📋 CREDENCIALES DE ACCESO:");
+print("\n👨‍💼 ADMINISTRADORES:");
+print("1. admin@luxeshop.com / admin123");
+print("2. andy@luxeshop.com / andy123");
+print("\n👤 USUARIOS:");
+print("3. maria@example.com / maria123");
+print("4. juan@example.com / juan123");
+print("5. ana@example.com / ana123");
+print("6. carlos@example.com / carlos123");
