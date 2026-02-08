@@ -268,7 +268,7 @@ products.forEach(p => {
 const seedProducts = async () => {
   try {
     console.log('🔌 Conectando a MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/luxeshop');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/luxeshop');
     console.log('✅ Conectado a MongoDB');
 
     console.log('🗑️  Limpiando productos existentes...');
