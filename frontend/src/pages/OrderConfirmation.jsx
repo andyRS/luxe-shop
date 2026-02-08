@@ -38,7 +38,8 @@ const OrderConfirmation = () => {
     try {
       toast.loading('Generando factura...', { id: 'invoice' });
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/orders/${order._id}/invoice`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBase}/orders/${order._id}/invoice`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

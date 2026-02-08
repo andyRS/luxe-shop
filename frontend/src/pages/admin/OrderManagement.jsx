@@ -64,7 +64,8 @@ const OrderManagement = () => {
     try {
       toast.loading('Generando factura...', { id: 'inv' });
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/orders/${order._id}/invoice`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiBase}/orders/${order._id}/invoice`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Error');
@@ -294,7 +295,8 @@ const InvoiceEditModal = ({ order, onClose }) => {
       setDownloading(true);
       toast.loading('Generando factura editada...', { id: 'cinv' });
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/orders/${order._id}/invoice/custom`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiBase}/orders/${order._id}/invoice/custom`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

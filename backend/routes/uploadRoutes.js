@@ -1,44 +1,11 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { protect, admin } from '../middleware/authMiddleware.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { cloudinary, upload } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// Configuración de Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|webp|gif/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (extname && mimetype) {
-    cb(null, true);
-  } else {
-    cb(new Error('Solo se permiten imágenes (jpg, png, webp, gif)'), false);
-  }
-};
-
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-});
-
-// @desc    Upload image
+// @desc    Upload image to Cloudinary
 // @route   POST /api/upload
 // @access  Private/Admin
 router.post('/upload', protect, admin, upload.single('image'), (req, res) => {
@@ -46,12 +13,30 @@ router.post('/upload', protect, admin, upload.single('image'), (req, res) => {
     return res.status(400).json({ message: 'No se envió ninguna imagen' });
   }
 
-  const url = `/uploads/${req.file.filename}`;
+  // Cloudinary devuelve la URL en req.file.path
   res.json({
     message: 'Imagen subida correctamente',
-    url,
-    filename: req.file.filename,
+    url: req.file.path,
+    public_id: req.file.filename,
   });
+});
+
+// @desc    Delete image from Cloudinary
+// @route   DELETE /api/upload/:public_id
+// @access  Private/Admin
+router.delete('/upload/:public_id', protect, admin, async (req, res) => {
+  try {
+    const { public_id } = req.params;
+    const result = await cloudinary.uploader.destroy(public_id);
+    
+    if (result.result === 'ok') {
+      res.json({ message: 'Imagen eliminada correctamente' });
+    } else {
+      res.status(400).json({ message: 'No se pudo eliminar la imagen' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // Manejo de errores de Multer

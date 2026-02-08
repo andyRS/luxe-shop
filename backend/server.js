@@ -54,28 +54,39 @@ const generalLimiter = rateLimit({
 app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
 // Middleware
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+
 app.use(cors({
-  origin: process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos de uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// En producción las imágenes se sirven desde Cloudinary.
+// Solo servir uploads locales en desarrollo como fallback.
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+}
 
 // Configurar Passport
 configurePassport();
 app.use(passport.initialize());
 
-// Conexión a MongoDB
+// Conexión a MongoDB Atlas (o local en desarrollo)
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/luxeshop');
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/luxeshop';
+    await mongoose.connect(mongoUri, {
+      // Opciones recomendadas para Atlas
+      retryWrites: true,
+      w: 'majority',
+    });
     console.log('✅ MongoDB conectado exitosamente');
+    console.log(`📍 Base de datos: ${mongoose.connection.name}`);
   } catch (error) {
     console.error('❌ Error al conectar MongoDB:', error.message);
     process.exit(1);
@@ -136,9 +147,9 @@ app.use('*', (req, res) => {
 });
 
 // Iniciar servidor
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
+  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown

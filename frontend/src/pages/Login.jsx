@@ -122,7 +122,8 @@ const Login = () => {
       // Guardar la ruta de redirección en sessionStorage
       sessionStorage.setItem('authRedirect', from);
       // Redirigir al endpoint de Google OAuth del backend
-      window.location.href = 'http://localhost:5000/api/auth/google';
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      window.location.href = `${apiBase}/auth/google`;
     } catch (error) {
       console.error('Error con Google:', error);
       toast.error('Error al conectar con Google');

@@ -34,7 +34,7 @@ const Offers = () => {
       setLoading(true);
       const [productsData, couponsRes] = await Promise.all([
         productService.getAll(),
-        fetch('http://localhost:5000/api/coupons/validate/BIENVENIDO10', {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/coupons/validate/BIENVENIDO10`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderTotal: 100 })

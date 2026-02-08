@@ -78,7 +78,8 @@ const Register = () => {
     // Guardar la ruta de redirección antes de ir a Google
     sessionStorage.setItem('authRedirect', from);
     // Redirigir al backend para OAuth con Google
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    window.location.href = `${apiBase}/auth/google`;
   };
 
   const handleSubmit = async (e) => {
