@@ -17,8 +17,18 @@ export const createOrder = async (req, res) => {
       notes
     } = req.body;
 
+    console.log('📦 Creando orden:', { 
+      itemsCount: items?.length, 
+      paymentMethod,
+      userId: req.user?._id 
+    });
+
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No hay items en la orden' });
+    }
+
+    if (!shippingAddress || !shippingAddress.name || !shippingAddress.street || !shippingAddress.city) {
+      return res.status(400).json({ message: 'La dirección de envío es incompleta' });
     }
 
     // Validar que todos los items tengan product ID válido
@@ -29,9 +39,24 @@ export const createOrder = async (req, res) => {
         });
       }
       // Verificar si es un ObjectId válido de MongoDB
-      if (!item.product.match(/^[0-9a-fA-F]{24}$/)) {
+      if (typeof item.product !== 'string' || !item.product.match(/^[0-9a-fA-F]{24}$/)) {
         return res.status(400).json({ 
           message: `El producto "${item.name}" tiene un ID inválido: ${item.product}. Debe ser un producto de la base de datos.` 
+        });
+      }
+    }
+
+    // Verificar que los productos existen en la base de datos
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product) {
+        return res.status(400).json({ 
+          message: `El producto "${item.name}" no existe en la base de datos. Por favor vacía tu carrito y vuelve a agregar los productos.` 
+        });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ 
+          message: `No hay suficiente stock de "${item.name}". Disponible: ${product.stock}` 
         });
       }
     }
@@ -41,7 +66,7 @@ export const createOrder = async (req, res) => {
       user: req.user._id,
       items,
       shippingAddress,
-      paymentMethod,
+      paymentMethod: paymentMethod || 'stripe',
       paymentInfo,
       notes,
       isPaid: true,
@@ -53,25 +78,44 @@ export const createOrder = async (req, res) => {
 
     // Guardar orden
     const createdOrder = await order.save();
+    console.log('✅ Orden creada:', createdOrder.orderNumber);
 
     // Actualizar stock de productos
     for (const item of items) {
-      const product = await Product.findById(item.product);
-      if (product) {
-        product.stock -= item.quantity;
-        await product.save();
+      try {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.stock = Math.max(0, product.stock - item.quantity);
+          await product.save();
+        }
+      } catch (stockError) {
+        console.error('Error actualizando stock:', stockError.message);
       }
     }
 
-    // Enviar email de confirmación
-    const user = await User.findById(req.user._id);
-    if (user?.email) {
-      sendOrderConfirmationEmail(createdOrder, user.email);
+    // Enviar email de confirmación (fire-and-forget)
+    try {
+      const user = await User.findById(req.user._id);
+      if (user?.email) {
+        sendOrderConfirmationEmail(createdOrder, user.email).catch(err => 
+          console.error('Error enviando email de confirmación:', err.message)
+        );
+      }
+    } catch (emailError) {
+      console.error('Error preparando email:', emailError.message);
     }
 
     res.status(201).json(createdOrder);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('❌ Error creando orden:', error);
+    
+    // Proporcionar mensaje más específico según el tipo de error
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: `Validación fallida: ${messages.join(', ')}` });
+    }
+    
+    res.status(400).json({ message: error.message || 'Error al crear la orden' });
   }
 };
 

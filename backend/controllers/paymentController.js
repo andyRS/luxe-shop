@@ -1,13 +1,29 @@
 import Stripe from 'stripe';
 import Order from '../models/Order.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Inicializar Stripe solo si la clave está configurada
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_YOUR_SECRET_KEY_HERE') {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('💳 Stripe configurado correctamente');
+} else {
+  console.log('⚠️ Stripe no configurado - modo demo activado');
+}
 
 // @desc    Crear PaymentIntent de Stripe
 // @route   POST /api/orders/create-payment-intent
 // @access  Private
 export const createPaymentIntent = async (req, res) => {
   try {
+    if (!stripe) {
+      // Modo demo: simular payment intent
+      return res.json({
+        clientSecret: `demo_secret_${Date.now()}`,
+        paymentIntentId: `demo_pi_${Date.now()}`,
+        demo: true
+      });
+    }
+
     const { amount, orderId } = req.body;
 
     // Crear PaymentIntent
@@ -39,6 +55,23 @@ export const createPaymentIntent = async (req, res) => {
 export const confirmPayment = async (req, res) => {
   try {
     const { paymentIntentId, orderId } = req.body;
+
+    // Modo demo: confirmar directamente
+    if (!stripe || paymentIntentId?.startsWith('demo_')) {
+      const order = await Order.findById(orderId);
+      if (order) {
+        order.isPaid = true;
+        order.paidAt = new Date();
+        order.paymentInfo = {
+          id: paymentIntentId || `demo_${Date.now()}`,
+          status: 'completed',
+          update_time: new Date()
+        };
+        await order.save();
+        return res.json({ success: true, message: 'Pago confirmado (demo)', order });
+      }
+      return res.status(404).json({ message: 'Orden no encontrada' });
+    }
 
     // Verificar el estado del pago en Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -83,7 +116,8 @@ export const confirmPayment = async (req, res) => {
 // @access  Public
 export const getStripeConfig = async (req, res) => {
   res.json({
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
+    demoMode: !stripe
   });
 };
 
@@ -91,6 +125,10 @@ export const getStripeConfig = async (req, res) => {
 // @route   POST /api/orders/webhook
 // @access  Public (Stripe)
 export const stripeWebhook = async (req, res) => {
+  if (!stripe) {
+    return res.status(400).json({ message: 'Stripe no configurado' });
+  }
+
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
